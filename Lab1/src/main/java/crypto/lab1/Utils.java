@@ -28,7 +28,19 @@ public class Utils {
      * Encode using repeating-key xor cipher
      */
     public static byte[] encode(String text, String key) {
-        return null;
+        final int textLen = text.length();
+        final int keyLen = key.length();
+        final byte[] textBytes = text.getBytes();
+        final byte[] keyBytes = key.getBytes();
+
+        int i = 0;
+        while (i < textLen) {
+            for (int j = 0; i < textLen && j < keyLen; i++, j++) {
+                textBytes[i] ^= keyBytes[j];
+            }
+        }
+
+        return textBytes;
     }
 
     private Utils() {}
