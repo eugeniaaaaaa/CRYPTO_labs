@@ -50,4 +50,11 @@ public class GeneticAlgorithm {
         return Files.lines(Paths.get(fileName))
                 .collect(Collectors.toMap(line -> line.split(",")[0], line -> Integer.valueOf(line.split(",")[1])));
     }
+
+    private List<String> generateNgrams(String word, int n) {
+        return IntStream.range(0, word.length() - n + 1)
+                .mapToObj(i -> word.substring(i, i + n))
+                .filter(str -> str.chars().allMatch(Character::isAlphabetic))
+                .collect(Collectors.toList());
+    }
 }
