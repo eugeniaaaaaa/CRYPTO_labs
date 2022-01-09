@@ -24,15 +24,17 @@ public class Utils {
         return bytes;
     }
 
+
     /**
      * Encode using repeating-key xor cipher
      */
     public static byte[] encode(String text, String key) {
-        final int textLen = text.length();
-        final int keyLen = key.length();
-        final byte[] textBytes = text.getBytes();
-        final byte[] keyBytes = key.getBytes();
+        return encode(text.getBytes(), key.getBytes());
+    }
 
+    public static byte[] encode(byte[] textBytes, byte[] keyBytes) {
+        final int textLen = textBytes.length;
+        final int keyLen = keyBytes.length;
         int i = 0;
         while (i < textLen) {
             for (int j = 0; i < textLen && j < keyLen; i++, j++) {
@@ -43,5 +45,21 @@ public class Utils {
         return textBytes;
     }
 
-    private Utils() {}
+    public static byte mostFrequentByte(byte[] bytes) {
+        final int[] letterFrequencies = new int[256]; // Byte range -> (-128, 127)
+        for (byte b : bytes) {
+            letterFrequencies[b - Byte.MIN_VALUE]++;
+        }
+        int maxIndex = 0;
+        for (int i = 1; i < 256; i++) {
+            if (letterFrequencies[i] > letterFrequencies[maxIndex]) {
+                maxIndex = i;
+            }
+        }
+
+        return (byte) (maxIndex + Byte.MIN_VALUE);
+    }
+
+    private Utils() {
+    }
 }

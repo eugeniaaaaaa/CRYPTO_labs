@@ -10,22 +10,11 @@ public class Task1 {
     }
 
     private static Optional<String> crack(byte[] encoded) {
-        final int[] letterFrequencies = new int[256]; // Byte range -> (-128, 127)
-        for (byte b : encoded) {
-            letterFrequencies[b - Byte.MIN_VALUE]++;
-        }
-        int maxIndex = 0;
-        for (int i = 1; i < 256; i++) {
-            if (letterFrequencies[i] > letterFrequencies[maxIndex]) {
-                maxIndex = i;
-            }
-        }
-
-        byte maxIndexByte = (byte) (maxIndex + Byte.MIN_VALUE);
+        final byte mostFrequentByte = Utils.mostFrequentByte(encoded);
 
         for (char reallyFrequentSymbol : Utils.symbolFrequenciesAscending) {
             // Suppose that the most frequent symbol in text is whitespace
-            int key = maxIndexByte ^ (int) reallyFrequentSymbol;
+            int key = mostFrequentByte ^ (int) reallyFrequentSymbol;
             // (a xor b) xor b == a, so we can use encode function for decoding
             String decodedText = new String(Utils.encode(new String(encoded), key));
             if (Utils.textMakesSense(decodedText)) {
