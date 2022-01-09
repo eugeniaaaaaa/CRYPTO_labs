@@ -13,9 +13,17 @@ public class Task3 {
         System.out.println(letterSubstitutions);
     }
 
+    private static String encode(String message, Map<Character, Character> substitutions) {
+        return IntStream.range(0, message.length())
+                .mapToObj(message::charAt)
+                .map(substitutions::get)
+                .map(String::valueOf)
+                .collect(Collectors.joining());
+    }
+
     private static Map<Character, Character> getLetterSubstitutions() {
         final Random random = new Random();
-        final List<Character> letters = IntStream.rangeClosed('A', 'Z').mapToObj(i -> (char)i).collect(Collectors.toList());
+        final List<Character> letters = IntStream.rangeClosed('A', 'Z').mapToObj(i -> (char) i).collect(Collectors.toList());
         final List<Character> lettersCopy = new ArrayList<>(letters);
         System.out.println(letters);
         return letters.stream().collect(Collectors.toMap(c -> c, c -> {
