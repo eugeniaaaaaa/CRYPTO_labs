@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 
 public class Utils {
     // According to the Concise Oxford Dictionary
-    public static final char[] symbolFrequenciesAscending = " EARIOTNSLCUDPMHGBFYWKVXZJQ".toLowerCase().toCharArray();
+    public static final String symbolFrequenciesAscending = " EARIOTNSLCUDPMHGBFYWKVXZJQ".toLowerCase();
 
     public static boolean textMakesSense(String text) {
         // I suppose, something more sophisticated is needed here
@@ -17,13 +17,15 @@ public class Utils {
      * Encodes text with a single-byte key
      */
     public static byte[] encode(String text, int key) {
-        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] ^= key;
-        }
-        return bytes;
+        return encode(text.getBytes(StandardCharsets.UTF_8), key);
     }
 
+    public static byte[] encode(byte[] textBytes, int key) {
+        for (int i = 0; i < textBytes.length; i++) {
+            textBytes[i] ^= key;
+        }
+        return textBytes;
+    }
 
     /**
      * Encode using repeating-key xor cipher

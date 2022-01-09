@@ -12,7 +12,7 @@ public class Task1 {
     private static Optional<String> crack(byte[] encoded) {
         final byte mostFrequentByte = Utils.mostFrequentByte(encoded);
 
-        for (char reallyFrequentSymbol : Utils.symbolFrequenciesAscending) {
+        for (char reallyFrequentSymbol : Utils.symbolFrequenciesAscending.toCharArray()) {
             // Suppose that the most frequent symbol in text is whitespace
             int key = mostFrequentByte ^ (int) reallyFrequentSymbol;
             // (a xor b) xor b == a, so we can use encode function for decoding
