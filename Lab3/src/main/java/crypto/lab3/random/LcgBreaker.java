@@ -4,6 +4,7 @@ import crypto.lab3.RemoteService;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,10 +51,11 @@ public class LcgBreaker extends AbstractBreaker {
         // a = (Z * m + x2 - x3) / (x1 - x2)
         // So, our task is to find such 'Z' that (Z * m + x2 - x3) % (x1 - x2) == 0
         // We need 3 values to make assumptions and one more to find which values are correct:
-        List<Long> Xs = //IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
-                Arrays.asList(1895032804L, -864382477L, -1249235274L, 316003997L);
+        List<Long> Xs = IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
         Set<Long> possibleAs = computePossibleAs(Xs);
         findAndSetCorrectConstants(possibleAs, Xs);
+//        this.a = 4296631821L;
+//        this.c = 1013904223L;
 
         long lastNumber = Xs.get(Xs.size() - 1);
         do {
@@ -65,50 +67,39 @@ public class LcgBreaker extends AbstractBreaker {
         if (Xs.size() < 3) {
             throw new IllegalStateException("Not enough arguments to predict");
         }
-        return IntStream.range(0, Xs.size() - 2)
-                .mapToObj(i -> new LongTuple3(Xs.get(i), Xs.get(i + 1), Xs.get(i + 2)))
-                .map(tuple -> LongStream.range(Integer.MIN_VALUE, Integer.MAX_VALUE)
-                        .filter(z -> 0 == (z * m + tuple.X2 - tuple.X3) % (tuple.X1 - tuple.X2))
-                        .mapToObj(z -> (z * m + tuple.X2 - tuple.X3) / (tuple.X1 - tuple.X2))
-                        .collect(Collectors.toSet()))
-                .reduce((set1, set2) -> {
-                    set1.retainAll(set2);
-                    return set1;
-                }).orElseThrow(IllegalStateException::new);
+
+        // Only use first 3 entries for computation
+        long X1 = Xs.get(0);
+        long X2 = Xs.get(1);
+        long X3 = Xs.get(2);
+
+        Set<Long> possibleAs = new HashSet<>();
+        for (long z = Integer.MIN_VALUE; z < Integer.MAX_VALUE; z++) {
+            if (0 == (z * m + X2 - X3) % (X1 - X2)) {
+                possibleAs.add((z * m + X2 - X3) / (X1 - X2));
+            }
+        }
+        return possibleAs;
     }
 
     private void findAndSetCorrectConstants(Set<Long> possibleAs, List<Long> Xs) {
-        class AC {
-            final long a;
-            final long c;
-
-            public AC(long a, long c) {
-                this.a = a;
-                this.c = c;
+        long[] XsArray = Xs.stream().mapToLong(i -> i).toArray();
+        for (long possibleA : possibleAs) {
+            for (long possibleC = Integer.MIN_VALUE; possibleC <= Integer.MAX_VALUE; possibleC++) {
+                boolean fits = true;
+                for (int i = 1; i < Xs.size(); i++) {
+                    if (predictNextNumber(XsArray[i - 1], possibleA, possibleC) != XsArray[i]) {
+                        fits = false;
+                        break;
+                    }
+                }
+                if (fits) {
+                    this.a = possibleA;
+                    this.c = possibleC;
+                    return;
+                }
             }
         }
-
-        // actual C for bounds to decrease time of computation
-        final long actualC = 1013904223L;
-        final long fromC = Integer.MIN_VALUE;
-        final long toC = Integer.MAX_VALUE;
-
-        AC ac = possibleAs.stream()
-                .flatMap(possibleA -> LongStream.rangeClosed(fromC, toC)
-                        .parallel()
-                        .filter(possibleC -> {
-                            for (int i = 1; i < Xs.size(); i++) {
-                                if (predictNextNumber(Xs.get(i - 1), possibleA, possibleC) != Xs.get(i)) {
-                                    return false;
-                                }
-                            }
-                            return true;
-                        })
-                        .mapToObj(possibleC -> new AC(possibleA, possibleC)))
-                .findFirst()
-                .orElseThrow(IllegalStateException::new);
-        this.a = ac.a;
-        this.c = ac.c;
     }
 
     private long predictNextNumber(long prevNumber) {
