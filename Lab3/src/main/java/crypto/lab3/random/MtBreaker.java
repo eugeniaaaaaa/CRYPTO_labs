@@ -12,6 +12,7 @@ public class MtBreaker extends AbstractBreaker {
 
     @Override
     public void becomeRich() {
+        getRemoteService().createAccount();
         final long start = System.currentTimeMillis() / 1000;
         final long realNumber = getRemoteService().play(1, 1).getRealNumber();
         final long end = System.currentTimeMillis() / 1000;

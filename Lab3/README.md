@@ -1,6 +1,11 @@
 ## Task 1 (Lcg)
-* playerId = 5431
-* a = 4296631821
-* b = 1013904223
-
 Result screenshot:
+![Task 1 result](img/task1.png)
+
+## Task 2 (Mt)
+Result screenshot:
+![Task 2 result](img/task2.png)
+
+## Task 3 (Better Mt)
+Result screenshot:
+![Task 3 result](img/task3.png)
