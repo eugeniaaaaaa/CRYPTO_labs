@@ -26,16 +26,13 @@ public class GeneticAlgorithm {
     private final int populationSize = 500;
     private final int tournamentSize = 20;
     private final double tournamentWinnerProbability = 0.75;
-    private final double crossoverProbability = 0.65;
     private final int crossoverPointsCount = 5;
     private final double mutationProbability = 0.2;
     private final double elitismPercentage = 0.15;
-    private final String selectionMethod = "TS";
     private final int terminate = 100;
 
     // Other parameters
-    private final double bigramWeight = 0;
-    private final double trigramWeight = 1;
+    private Map<String, Integer> trigramFrequency;
 
     //
     private final String letters = IntStream.rangeClosed('A', 'Z').mapToObj(i -> (char) i)
@@ -65,8 +62,6 @@ public class GeneticAlgorithm {
             letterCase[i] = Character.isLowerCase(c) && Character.isAlphabetic(c);
         }
         this.cipherText = cipherText.toUpperCase();
-
-        this.bigramFrequency = getNgramFrequency("data/bi-ngramFrequency.csv");
         this.trigramFrequency = getNgramFrequency("data/tri-ngramFrequency.csv");
 
         List<String> population = initialization();
@@ -113,11 +108,10 @@ public class GeneticAlgorithm {
                 .collect(Collectors.toMap(line -> line.split(",")[0], line -> Integer.valueOf(line.split(",")[1])));
     }
 
-    private List<String> generateNgrams(String word, int n) {
+    private Stream<String> generateNgrams(String word, int n) {
         return IntStream.range(0, word.length() - n + 1)
                 .mapToObj(i -> word.substring(i, i + n))
-                .filter(str -> str.chars().allMatch(Character::isAlphabetic))
-                .collect(Collectors.toList());
+                .filter(str -> str.chars().allMatch(Character::isAlphabetic));
     }
 
     private String cipherText;
@@ -133,32 +127,12 @@ public class GeneticAlgorithm {
                 .collect(Collectors.joining());
     }
 
-    private Map<String, Integer> bigramFrequency;
-    private Map<String, Integer> trigramFrequency;
-
     private double calculateKeyFitness(String text) {
-        List<String> bigrams = generateNgrams(text, 2);
-        List<String> trigrams = generateNgrams(text, 3);
-
-        double bigramFitness = 0;
-        if (bigramWeight > 0) {
-            for (String bigram : bigrams) {
-                if (bigramFrequency.containsKey(bigram)) {
-                    bigramFitness += log2(bigramFrequency.get(bigram));
-                }
-            }
-        }
-
-        double trigramFitness = 0;
-        if (trigramWeight > 0) {
-            for (String trigram : trigrams) {
-                if (trigramFrequency.containsKey(trigram)) {
-                    trigramFitness += log2(trigramFrequency.get(trigram));
-                }
-            }
-        }
-
-        return bigramFitness * bigramWeight + trigramFitness * trigramWeight;
+        return generateNgrams(text, 3)
+                .map(trigramFrequency::get)
+                .filter(Objects::nonNull)
+                .mapToDouble(GeneticAlgorithm::log2)
+                .sum();
     }
 
     private String mergeKeys(String first, String second) {
@@ -215,15 +189,10 @@ public class GeneticAlgorithm {
     }
 
     private List<Double> evaluation(List<String> population) {
-        List<Double> fitness = new ArrayList<>();
-
-        for (String key : population) {
-            String decryptedText = decrypt(key);
-            double keyFitness = calculateKeyFitness(decryptedText);
-            fitness.add(keyFitness);
-        }
-
-        return fitness;
+        return population.stream()
+                .map(this::decrypt)
+                .map(this::calculateKeyFitness)
+                .collect(Collectors.toList());
     }
 
     private List<String> elitism(List<String> population, List<Double> fitness) {
@@ -235,21 +204,6 @@ public class GeneticAlgorithm {
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
-    }
-
-    private int rouletteWheelSelection(List<Double> fitness) {
-        int index = -1;
-        double highestProbability = fitness.stream().max(Double::compare).orElseThrow(IllegalStateException::new);
-
-        boolean selected = false;
-        while (!selected) {
-            index = random.nextInt(populationSize);
-            double probability = fitness.get(index);
-            double r = random.nextDouble() * highestProbability;
-            selected = (r < probability);
-        }
-
-        return index;
     }
 
     private Pair<String, String> tournamentSelection(List<String> population, List<Double> fitness) {
@@ -268,7 +222,7 @@ public class GeneticAlgorithm {
                 populationCopy.remove(r);
             }
 
-            List<String> tournamentKeys  = tournamentPopulation.entrySet().stream()
+            List<String> tournamentKeys = tournamentPopulation.entrySet().stream()
                     .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
@@ -288,46 +242,28 @@ public class GeneticAlgorithm {
     }
 
     private List<String> reproduction(List<String> population, List<Double> fitness) {
-        List<String> crossoverPopulation = new ArrayList<>();
-
-        while (crossoverPopulation.size() < crossoverCount) {
-            // TODO: maybe something more sophisticated
-            Pair<String, String> parents = tournamentSelection(population, fitness);
-
-            String offspring1 = mergeKeys(parents.a, parents.b);
-            String offspring2 = mergeKeys(parents.b, parents.a);
-
-            crossoverPopulation.add(offspring1);
-            crossoverPopulation.add(offspring2);
-        }
-
-        return mutation(crossoverPopulation, crossoverCount);
+        return mutation(IntStream.range(0, (crossoverCount + 1) / 2)
+                .mapToObj(i -> tournamentSelection(population, fitness))
+                .flatMap(parents -> Stream.of(mergeKeys(parents.a, parents.b), mergeKeys(parents.b, parents.a)))
+                .collect(Collectors.toList()));
     }
 
-    private List<String> mutation(List<String> population, int populationSize) {
-        for (int i = 0; i < populationSize; i++) {
-            double r = random.nextDouble();
-
-            if (r < mutationProbability) {
-                String key = population.get(i);
-                String mutatedKey = mutateKey(key);
-                population.set(i ,mutatedKey);
-            }
-        }
-
-        return population;
+    private List<String> mutation(List<String> population) {
+        return population.stream()
+                .map(key -> (random.nextDouble() < mutationProbability)
+                        ? mutateKey(key)
+                        : key)
+                .collect(Collectors.toList());
     }
 
     private boolean[] letterCase;
+
     private String convertToPlainText(String decryptedText) {
         char[] plainText = decryptedText.toCharArray();
-        for (int i = 0; i < plainText.length; i++) {
-            if (letterCase[i]) {
-                plainText[i] = Character.toLowerCase(plainText[i]);
-            }
-        }
-
-        return new String(plainText);
+        return IntStream.range(0, decryptedText.length())
+                .mapToObj(i -> letterCase[i] ? Character.toLowerCase(plainText[i]) : plainText[i])
+                .map(String::valueOf)
+                .collect(Collectors.joining());
     }
 
 
