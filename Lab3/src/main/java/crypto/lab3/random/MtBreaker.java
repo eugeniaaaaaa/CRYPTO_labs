@@ -3,9 +3,7 @@ package crypto.lab3.random;
 import crypto.lab3.RemoteService;
 import crypto.lab3.utils.Mt19937Random;
 
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 public class MtBreaker extends AbstractBreaker {
     public MtBreaker(RemoteService remoteService) {
