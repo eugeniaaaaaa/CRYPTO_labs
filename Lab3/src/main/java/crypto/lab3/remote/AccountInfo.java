@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 @Getter
 @Setter
@@ -12,5 +12,5 @@ import java.time.LocalTime;
 public class AccountInfo {
     private int id;
     private long money;
-    private LocalTime deletionTime;
+    private ZonedDateTime deletionTime;
 }
