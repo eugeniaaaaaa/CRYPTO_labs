@@ -229,7 +229,7 @@ public class GeneticAlgorithm {
     private List<String> elitism(List<String> population, List<Double> fitness) {
         return IntStream.range(0, populationSize)
                 .boxed()
-                .collect(Collectors.toMap(population::get, fitness::get)).entrySet().stream()
+                .collect(Collectors.toMap(population::get, fitness::get, (a, b) -> a)).entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                 .limit(elitismCount)
                 .sorted(Map.Entry.comparingByValue())
@@ -269,7 +269,7 @@ public class GeneticAlgorithm {
             }
 
             List<String> tournamentKeys  = tournamentPopulation.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue())
+                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
 
