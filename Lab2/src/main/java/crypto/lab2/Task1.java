@@ -22,7 +22,6 @@ public class Task1 {
                 .map(Task1::transpose)
                 .map(parts -> Task2.crack(parts, parts.length, s -> containsName(s, names)))
                 .forEach(System.out::println);
-
     }
 
     private static byte[][] transpose(byte[][] bytes) {
@@ -32,17 +31,6 @@ public class Task1 {
             for (int j = 0; j < bytes[0].length; j++) {
                 result[j][i] = bytes[i][j];
             }
-        }
-
-        return result;
-    }
-
-    private static int[] xor(byte[] a, byte[] b) {
-        int minLen = Math.min(a.length, b.length);
-        int[] result = new int[minLen];
-
-        for (int i = 0; i < minLen; i++) {
-            result[i] = (a[i] ^ b[i]);
         }
 
         return result;
