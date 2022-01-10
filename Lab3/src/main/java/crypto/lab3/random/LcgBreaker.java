@@ -3,6 +3,9 @@ package crypto.lab3.random;
 import crypto.lab3.RemoteService;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class LcgBreaker extends AbstractBreaker {
@@ -19,33 +22,22 @@ public class LcgBreaker extends AbstractBreaker {
 //        getRemoteService().createAccount();
         // X(i+1) = (X(i) * a + c) % m
         // Solution:
-        // X3 = X2 * a + c
-        // X2 = X1 * a + c
-        // Where X1, X2, X3 are known and X1 <= X2 <= X3
-        // After subtraction of equations:
-        // X3 - X2 = a * (X2 - X1)
-        // Hence:
-        // a = (X3 - X2) / (X2 - X1)
-        // c = X2 - X1 * a = X3 - X2 * a
-        // For getting the value of m we continue betting until out prediction does not equal real number
-        // Let Xa - prediction, Xb - real number, then
-        // Xb < Xa,
-        // m = Xa % Xb
-        // m =
-        long X1 = requestNextNumber();
-        long X2 = requestNextNumber();
-        long X3 = requestNextNumber();
-
-        while (!((X1 <= X2) && (X2 <= X3))) {
-            X1 = X2;
-            X2 = X3;
-            X3 = requestNextNumber();
-        }
-
-        a = (X3 - X2) / (double)(X2 - X1);
-        c = X2 - X1 * a;
-
-        long currentNumber = X3;
+        // X2 = (a * X1 + c) % m = (m * z1 + X2) % m
+        // Assume that:
+        // a * X1 + c = m * z1 + X2
+        // This assumption will lead to several possible values of 'a', only one of them is correct
+        // X3 = (a * X2 + c) % m = (m * z2 + X3) % m
+        // Same assumption:
+        // a * X2 + c = m * z2 + X3
+        // Let's subtract the equations:
+        // (a * X1 + c) - (a * X2 + c) = (m * z1 + X2) - (m * z2 + X3)
+        // a * X1 + c - a * X2 - c = m * z1 + X2 - m * z2 - X3
+        // a = ((z1 -z2) * m + X2 - X3) / (X1 - X2)
+        // Let (z1 -z2) = Z:
+        // a = (Z * m + x2 - x3) / (x1 - x2)
+        // So, our task is to find such 'Z' that (Z * m + x2 - x3) % (x1 - x2) == 0
+        // We need 3 values to make assumptions and one more to find which values are correct:
+        List<Long> Xs = IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
     }
 
     private long predictNextNumber(long prevNumber) {
