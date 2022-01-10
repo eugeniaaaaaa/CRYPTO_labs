@@ -55,6 +55,58 @@ public class GeneticAlgorithm {
         }
     }
 
+    public void run(String cipherText) {
+        if (cipherText == null || cipherText.isEmpty()) {
+            throw new IllegalStateException("Invalid cipher text");
+        }
+        this.letterCase = new boolean[cipherText.length()];
+        for (int i = 0; i < cipherText.length(); i++) {
+            char c = cipherText.charAt(i);
+            letterCase[i] = Character.isLowerCase(c) && Character.isAlphabetic(c);
+        }
+        this.cipherText = cipherText.toUpperCase();
+
+        this.bigramFrequency = getNgramFrequency("data/bi-ngramFrequency.csv");
+        this.trigramFrequency = getNgramFrequency("data/tri-ngramFrequency.csv");
+
+        List<String> population = initialization();
+
+        double highestFitness = 0;
+        int stuckCounter = 0;
+        for (int i = 0; i <= generations; i++) {
+            List<Double> fitness = evaluation(population);
+            List<String> elitistPopulation = elitism(population, fitness);
+            List<String> crossoverPopulation = reproduction(population, fitness);
+            population.clear();
+            population.addAll(elitistPopulation);
+            population.addAll(crossoverPopulation);
+
+            double maxFitness = fitness.stream().max(Comparator.comparingDouble(d -> d)).orElseThrow(IllegalStateException::new);
+            if (highestFitness == maxFitness) {
+                stuckCounter++;
+            } else {
+                stuckCounter = 1;
+            }
+
+            if (stuckCounter >= this.terminate) {
+                throw new IllegalStateException("Got stuck too many times, terminating");
+            }
+
+            highestFitness = maxFitness;
+            double averageFitness = fitness.stream().mapToDouble(d -> d).sum() / populationSize;
+
+            int index = fitness.indexOf(highestFitness);
+            String key = population.get(index);
+            String decryptedText = decrypt(key);
+
+            System.out.println(" ---> Generation No " + i);
+            System.out.println("Average Fitness: " + averageFitness);
+            System.out.println("Max fitness: " + highestFitness);
+            System.out.println("Key: " + key);
+            System.out.println("Decrypted text:\n" + convertToPlainText(decryptedText) + "\n");
+        }
+    }
+
     @SneakyThrows
     private Map<String, Integer> getNgramFrequency(String fileName) {
         return Files.lines(Paths.get(fileName))
@@ -235,8 +287,47 @@ public class GeneticAlgorithm {
         return new Pair<>(selectedKeys.get(0), selectedKeys.get(1));
     }
 
-    private String reproduction(List<String> population, List<Double> fitness) {
+    private List<String> reproduction(List<String> population, List<Double> fitness) {
+        List<String> crossoverPopulation = new ArrayList<>();
 
+        while (crossoverPopulation.size() < crossoverCount) {
+            // TODO: maybe something more sophisticated
+            Pair<String, String> parents = tournamentSelection(population, fitness);
+
+            String offspring1 = mergeKeys(parents.a, parents.b);
+            String offspring2 = mergeKeys(parents.b, parents.a);
+
+            crossoverPopulation.add(offspring1);
+            crossoverPopulation.add(offspring2);
+        }
+
+        return mutation(crossoverPopulation, crossoverCount);
+    }
+
+    private List<String> mutation(List<String> population, int populationSize) {
+        for (int i = 0; i < populationSize; i++) {
+            double r = random.nextDouble();
+
+            if (r < mutationProbability) {
+                String key = population.get(i);
+                String mutatedKey = mutateKey(key);
+                population.set(i ,mutatedKey);
+            }
+        }
+
+        return population;
+    }
+
+    private boolean[] letterCase;
+    private String convertToPlainText(String decryptedText) {
+        char[] plainText = decryptedText.toCharArray();
+        for (int i = 0; i < plainText.length; i++) {
+            if (letterCase[i]) {
+                plainText[i] = Character.toLowerCase(plainText[i]);
+            }
+        }
+
+        return new String(plainText);
     }
 
 
