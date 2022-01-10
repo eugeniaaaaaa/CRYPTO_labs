@@ -3,26 +3,14 @@ package crypto.lab3.random;
 import crypto.lab3.RemoteService;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
 
 public class LcgBreaker extends AbstractBreaker {
-    private static class LongTuple3 {
-        long X1, X2, X3;
-
-        public LongTuple3(long x1, long x2, long x3) {
-            X1 = x1;
-            X2 = x2;
-            X3 = x3;
-        }
-    }
-
     private long a = 0;
     private long c = 1;
     private final long m = BigInteger.valueOf(2).pow(32).longValue();
