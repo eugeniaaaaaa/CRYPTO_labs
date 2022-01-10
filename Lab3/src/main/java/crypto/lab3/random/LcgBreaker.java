@@ -3,6 +3,7 @@ package crypto.lab3.random;
 import crypto.lab3.RemoteService;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,8 +22,8 @@ public class LcgBreaker extends AbstractBreaker {
         }
     }
 
-    private double a = 0;
-    private double c = 1;
+    private long a = 0;
+    private long c = 1;
     private final long m = BigInteger.valueOf(2).pow(32).longValue();
 
     public LcgBreaker(RemoteService remoteService) {
@@ -49,9 +50,15 @@ public class LcgBreaker extends AbstractBreaker {
         // a = (Z * m + x2 - x3) / (x1 - x2)
         // So, our task is to find such 'Z' that (Z * m + x2 - x3) % (x1 - x2) == 0
         // We need 3 values to make assumptions and one more to find which values are correct:
-        List<Long> Xs = IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
+        List<Long> Xs = //IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
+                Arrays.asList(1895032804L, -864382477L, -1249235274L, 316003997L);
         Set<Long> possibleAs = computePossibleAs(Xs);
         findAndSetCorrectConstants(possibleAs, Xs);
+
+        long lastNumber = Xs.get(Xs.size() - 1);
+        do {
+            lastNumber = predictNextNumber(lastNumber);
+        } while (betAndGetAccountMoney(100, lastNumber) < 1_000_000);
     }
 
     private Set<Long> computePossibleAs(List<Long> Xs) {
@@ -71,14 +78,48 @@ public class LcgBreaker extends AbstractBreaker {
     }
 
     private void findAndSetCorrectConstants(Set<Long> possibleAs, List<Long> Xs) {
+        class AC {
+            final long a;
+            final long c;
 
+            public AC(long a, long c) {
+                this.a = a;
+                this.c = c;
+            }
+        }
+
+        // actual C for bounds to decrease time of computation
+        final long actualC = 1013904223L;
+        final long fromC = Integer.MIN_VALUE;
+        final long toC = Integer.MAX_VALUE;
+
+        AC ac = possibleAs.stream()
+                .flatMap(possibleA -> LongStream.rangeClosed(fromC, toC)
+                        .parallel()
+                        .filter(possibleC -> {
+                            for (int i = 1; i < Xs.size(); i++) {
+                                if (predictNextNumber(Xs.get(i - 1), possibleA, possibleC) != Xs.get(i)) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        })
+                        .mapToObj(possibleC -> new AC(possibleA, possibleC)))
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
+        this.a = ac.a;
+        this.c = ac.c;
     }
 
     private long predictNextNumber(long prevNumber) {
-        return (int) (prevNumber * a + c) % m;
+        return predictNextNumber(prevNumber, a, c);
     }
 
-    private long betAndGetAccountMoney(int amountOfMoney, int number) {
+    private long predictNextNumber(long prevNumber, long a, long c) {
+        return (a * prevNumber + c) % m;
+    }
+
+    private long betAndGetAccountMoney(int amountOfMoney, long number) {
         return getRemoteService().play(amountOfMoney, number).getAccount().getMoney();
     }
 

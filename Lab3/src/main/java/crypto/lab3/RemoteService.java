@@ -29,7 +29,7 @@ public class RemoteService {
         return restTemplate.getForObject(createAccountPattern, AccountInfo.class);
     }
 
-    public BetInfo play(long amountOfMoney, int number) {
+    public BetInfo play(long amountOfMoney, long number) {
         return restTemplate.getForObject(format(playPattern, String.valueOf(amountOfMoney), String.valueOf(number)), BetInfo.class);
     }
 
