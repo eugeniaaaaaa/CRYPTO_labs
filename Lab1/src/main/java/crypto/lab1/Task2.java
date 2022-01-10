@@ -1,9 +1,12 @@
 package crypto.lab1;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static crypto.lab1.Utils.randomEqualProb;
 
 public class Task2 {
     public static void main(String[] args) {
@@ -14,8 +17,10 @@ public class Task2 {
 
     private static String crack(byte[] encoded) {
         final int keyLength = findKeyLength(encoded);
-        final byte[][] parts = split(encoded, keyLength);
+        return crack(split(encoded, keyLength), keyLength, Utils::textMakesSense);
+    }
 
+    public static String crack(byte[][] parts, int keyLength, Predicate<String> successPred) {
         // Combinations will be computed on demand
         Stream<List<Integer>> possibleCombinations = bytes2stream(Utils.symbolFrequenciesAscending.getBytes()).boxed().map(Arrays::asList);
         for (int i = 1; i < keyLength; i++) {
@@ -37,7 +42,7 @@ public class Task2 {
 
                     return new String(concat(convertedParts));
                 })
-                .filter(Utils::textMakesSense)
+                .filter(successPred)
                 .findFirst().orElseThrow(() -> new IllegalStateException("Cannot infer text"));
     }
 
@@ -105,19 +110,5 @@ public class Task2 {
         byte[] temp = new byte[len - i];
         System.arraycopy(bytes, i, temp, 0, len - i);
         return temp;
-    }
-
-    private static double randomEqualProb(byte[] bytes, int N) {
-        final int[] symbolCounts = new int[256];
-        for (int i = 0; i < N; i++) {
-            symbolCounts[bytes[i] - Byte.MIN_VALUE]++;
-        }
-        // Index of coincidence
-        double I = 0;
-        for (int i = 0; i < 256; i++) {
-            I += symbolCounts[i] * (symbolCounts[i] - 1) / (double) (N * (N - 1));
-        }
-
-        return I;
     }
 }

@@ -62,6 +62,20 @@ public class Utils {
         return (byte) (maxIndex + Byte.MIN_VALUE);
     }
 
+    public static double randomEqualProb(byte[] bytes, int N) {
+        final int[] symbolCounts = new int[256];
+        for (int i = 0; i < N; i++) {
+            symbolCounts[bytes[i] - Byte.MIN_VALUE]++;
+        }
+        // Index of coincidence
+        double I = 0;
+        for (int i = 0; i < 256; i++) {
+            I += symbolCounts[i] * (symbolCounts[i] - 1) / (double) (N * (N - 1));
+        }
+
+        return I;
+    }
+
     private Utils() {
     }
 }

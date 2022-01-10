@@ -1,26 +1,40 @@
 package crypto.lab2;
 
+import crypto.lab1.Task2;
 import lombok.SneakyThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Task1 {
     public static void main(String[] args) {
         List<String> cipheredText = cipheredText();
+        List<String> names = names();
 
         cipheredTextBytes(cipheredText)
-                .flatMap(bytes1 -> cipheredTextBytes(cipheredText).map(bytes2 -> xor(bytes1, bytes2)))
-                .map(ints -> Arrays.stream(ints).map(Task1::nearestSymbol).toArray())
-                .map(ints -> new String(ints, 0, ints.length))
+                .collect(Collectors.groupingBy(bytes -> bytes.length)).values().stream()
+                .sorted(Comparator.comparingInt(List<byte[]>::size).reversed())
+                .parallel()
+                .map(lst -> lst.toArray(new byte[0][]))
+                .map(Task1::transpose)
+                .map(parts -> Task2.crack(parts, parts.length, s -> containsName(s, names)))
                 .forEach(System.out::println);
+
+    }
+
+    private static byte[][] transpose(byte[][] bytes) {
+        byte[][] result = new byte[bytes[0].length][bytes.length];
+
+        for (int i = 0; i < bytes.length; i++) {
+            for (int j = 0; j < bytes[0].length; j++) {
+                result[j][i] = bytes[i][j];
+            }
+        }
+
+        return result;
     }
 
     private static int[] xor(byte[] a, byte[] b) {
@@ -34,26 +48,9 @@ public class Task1 {
         return result;
     }
 
-    private static int nearestSymbol(int b) {
-        return IntStream.concat(IntStream.range('A', 'Z'), IntStream.range('a', 'z'))
-                .mapToObj(s -> new Object() {
-                    final int symbol = s;
-                    final int onesCount = onesCount((byte) (s ^ b));
-                })
-                .min(Comparator.comparingInt(p -> p.onesCount))
-                .map(pair -> pair.symbol)
-                .orElseThrow(IllegalAccessError::new);
-    }
-
-    private static int onesCount(byte b) {
-        int onesCount = 0;
-        while (b > 0) {
-            if ((b & 1) > 0) {
-                onesCount++;
-            }
-            b >>= 1;
-        }
-        return onesCount;
+    private static boolean containsName(String text, List<String> names) {
+        String upperText = text.toUpperCase();
+        return names.stream().anyMatch(upperText::contains);
     }
 
     private static Stream<byte[]> cipheredTextBytes(List<String> cipheredText) {
@@ -61,16 +58,15 @@ public class Task1 {
     }
 
     private static List<String> cipheredText() {
-        return resourceLines("encrypted-text.txt");
+        return resourceLines("encrypted-text.txt").collect(Collectors.toList());
     }
 
-    private static List<String> englishNames() {
-        return resourceLines("english-names.txt");
+    private static List<String> names() {
+        return resourceLines("english-names.txt").map(String::toUpperCase).collect(Collectors.toList());
     }
 
     @SneakyThrows
-    private static List<String> resourceLines(String resourceName) {
-        return Files.lines(Paths.get(Objects.requireNonNull(Task1.class.getClassLoader().getResource(resourceName)).getPath()))
-                .collect(Collectors.toList());
+    private static Stream<String> resourceLines(String resourceName) {
+        return Files.lines(Paths.get(Objects.requireNonNull(Task1.class.getClassLoader().getResource(resourceName)).getPath()));
     }
 }
