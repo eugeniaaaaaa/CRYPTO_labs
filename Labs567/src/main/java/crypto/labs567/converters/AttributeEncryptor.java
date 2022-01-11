@@ -1,48 +1,62 @@
 package crypto.labs567.converters;
 
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
-import java.security.InvalidKeyException;
-import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Random;
 
 @Component
 @Converter
-public class AttributeEncryptor implements AttributeConverter<String, String> {
-    private static final String AES = "AES";
-    private static final String SECRET = "secret-key-12345";
+public class AttributeEncryptor implements AttributeConverter<String, byte[]> {
+    static String plainText = "This is a plain text which need to be encrypted by Java AES 256 GCM Encryption Algorithm";
+    public static final int AES_KEY_SIZE = 256;
+    public static final int GCM_IV_LENGTH = 12;
+    public static final int GCM_TAG_LENGTH = 16;
+    private final SecretKey key;
 
-    private final Key key;
-    private final Cipher cipher;
-
-    public AttributeEncryptor() throws Exception {
-        key = new SecretKeySpec(SECRET.getBytes(), AES);
-        cipher = Cipher.getInstance(AES);
+    public AttributeEncryptor() throws NoSuchAlgorithmException {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(AES_KEY_SIZE);
+        key = keyGenerator.generateKey();
     }
 
     @Override
-    public String convertToDatabaseColumn(String attribute) {
-        try {
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            return Base64.getEncoder().encodeToString(cipher.doFinal(attribute.getBytes()));
-        } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
-            throw new IllegalStateException(e);
-        }
+    @SneakyThrows
+    public byte[] convertToDatabaseColumn(String attribute) {
+        byte[] IV = randomIV();
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(key.getEncoded(), "AES");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV);
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec);
+        return cipher.doFinal(attribute.getBytes());
     }
 
     @Override
-    public String convertToEntityAttribute(String dbData) {
-        try {
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            return new String(cipher.doFinal(Base64.getDecoder().decode(dbData)));
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
-            throw new IllegalStateException(e);
-        }
+    @SneakyThrows
+    public String convertToEntityAttribute(byte[] dbData) {
+        byte[] IV = randomIV();
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(key.getEncoded(), "AES");
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec);
+        byte[] decryptedText = cipher.doFinal(dbData);
+        return new String(decryptedText);
+    }
+
+    private byte[] randomIV() {
+        byte[] IV = new byte[GCM_IV_LENGTH];
+        Random random = new Random(100);
+        random.nextBytes(IV);
+        return IV;
     }
 }
