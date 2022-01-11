@@ -20,7 +20,6 @@ public class User {
     private String firstName;
     private String lastName;
     private String passwordEncoded;
-    private String salt;
 
     @Override
     public int hashCode() {
