@@ -22,6 +22,7 @@ public class PasswordGeneratorStartup {
 
     @SneakyThrows
     private static void writeGeneratedPasswords(String fileName, PasswordGenerator generator, BiConsumer<String, CSVWriter> entryWriter) {
+//        try (FileChannel fileChannel = Files.newByteChannel(Paths.get(fileName)))
         try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(Paths.get(fileName)))) {
             for (int i = 0; i < 100_000; i++) {
                 entryWriter.accept(generator.generatePassword(), writer);

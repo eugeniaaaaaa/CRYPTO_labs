@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 
-public class PasswordGenerator {
+public class PasswordGenerator implements AutoCloseable{
     private static final int top100PasswordRate = 10;
     private static final int top100kPasswordRate = 85;
     private static final int randomPasswordRate = 5;
@@ -18,11 +18,13 @@ public class PasswordGenerator {
     private List<String> top100Passwords;
     private List<String> top100kPasswords;
 
-    public String generatePassword() {
+    public PasswordGenerator() {
         top100Passwords = resourceLines("top-100-most-common-passwords.txt");
         top100kPasswords = resourceLines("top-100k-most-common-passwords.txt");
-        double randomValue = random.nextDouble();
+    }
 
+    public String generatePassword() {
+        double randomValue = random.nextDouble();
         String password;
         if (randomValue < top100PasswordRate / totalRate) {
             password = passwordFromTop100(randomValue);
@@ -31,8 +33,6 @@ public class PasswordGenerator {
         } else {
             password = randomPassword();
         }
-        top100Passwords = null;
-        top100kPasswords = null;
         return password;
     }
 
@@ -58,5 +58,11 @@ public class PasswordGenerator {
         byte[] bytes = new byte[random.nextInt(6) + 4]; // Random password between 4 and 10
         random.nextBytes(bytes);
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void close() throws Exception {
+        top100Passwords = null;
+        top100kPasswords = null;
     }
 }
