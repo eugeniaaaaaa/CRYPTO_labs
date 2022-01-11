@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en-US" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>User info</title>
+</head>
+<body>
+<h1>User info</h1>
+<p>This page is intended to be secure</p>
+<ul>
+    <li>Email: <span th:text="${userInfo.email}"></span></li>
+    <li>Username: <span th:text="${userInfo.username}"></span></li>
+    <li>First name: <span th:text="${userInfo.firstName}"></span></li>
+    <li>Last name: <span th:text="${userInfo.lastName}"></span></li>
+    <li>Phone number: <span th:text="${userInfo.phoneNumber}"></span></li>
+</ul>
+<form th:action="@{/logout}" method="post">
+    <input type="submit" value="Sign Out"/>
+</form>
+</body>
+</html>
