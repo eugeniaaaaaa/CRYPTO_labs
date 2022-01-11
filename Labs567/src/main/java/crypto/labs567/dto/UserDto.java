@@ -1,5 +1,6 @@
 package crypto.labs567.dto;
 
+import crypto.labs567.validation.QuiteStrongPassword;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +16,6 @@ public class UserDto {
     private String username;
     private String firstName;
     private String lastName;
-    @Size(min = 8, message = "Password must be at least 8 symbols long")
+    @QuiteStrongPassword
     private String password;
 }
