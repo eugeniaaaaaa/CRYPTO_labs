@@ -1,5 +1,6 @@
 package crypto.labs567.domain;
 
+import crypto.labs567.converters.AttributeEncryptor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,11 +17,15 @@ public class User {
     @Column(unique = true)
     private String email;
     @Column(unique = true) // Because why not?
+    @Convert(converter = AttributeEncryptor.class)
     private String username;
+    @Convert(converter = AttributeEncryptor.class)
     private String firstName;
+    @Convert(converter = AttributeEncryptor.class)
     private String lastName;
-    private String passwordEncoded;
+    @Convert(converter = AttributeEncryptor.class)
     private String phoneNumber;
+    private String passwordEncoded;
 
     @Override
     public int hashCode() {
