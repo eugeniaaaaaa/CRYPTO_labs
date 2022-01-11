@@ -7,11 +7,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 import java.util.stream.Stream;
 
-@Component
+@Service
 public class UserService implements UserDetailsService {
     private final EmailValidator emailValidator = new EmailValidator();
     private final UserRepository userRepository;

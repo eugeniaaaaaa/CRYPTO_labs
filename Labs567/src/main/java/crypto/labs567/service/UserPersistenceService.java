@@ -6,8 +6,9 @@ import crypto.labs567.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 public class UserPersistenceService {
     private final PasswordEncoder encoder;
     private final UserRepository userRepository;
