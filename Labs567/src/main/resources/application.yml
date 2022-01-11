@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: localhost:5432/labs567_db
+    username: labs567_user
+    password: thestrongestpasswordiveeverseen0252_
+    driver-class-name: org.postgresql.Driver
