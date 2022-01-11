@@ -9,4 +9,4 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQL10Dialect
 crypto:
-  common-passwords-file-name: data/top-100-most-common-passwords.txt
+  common-passwords-file-name: Labs567/data/most-common-passwords.txt

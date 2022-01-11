@@ -14,6 +14,6 @@ public class NotCommonPasswordValidator implements ConstraintValidator<NotCommon
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        return commonPasswordService.isCommon(value);
+        return !commonPasswordService.isCommon(value);
     }
 }
