@@ -7,8 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-public class PasswordGenerator implements AutoCloseable{
+public class PasswordGenerator implements AutoCloseable {
     private static final int top100PasswordRate = 10;
     private static final int top100kPasswordRate = 85;
     private static final int randomPasswordRate = 5;
@@ -54,10 +57,16 @@ public class PasswordGenerator implements AutoCloseable{
         return Files.readAllLines(Paths.get("data/" + resourceName));
     }
 
+    private final int[] availableCharacters = IntStream.concat(
+                    IntStream.concat(IntStream.range('A', 'Z'), IntStream.range('a', 'z')),
+                    IntStream.range('0', '9'))
+            .toArray();
+
     public String randomPassword() {
-        byte[] bytes = new byte[random.nextInt(6) + 4]; // Random password between 4 and 10
-        random.nextBytes(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        return IntStream.range(0, random.nextInt(6) + 4)
+                .mapToObj(i -> (char) availableCharacters[random.nextInt(availableCharacters.length)])
+                .map(String::valueOf)
+                .collect(Collectors.joining());
     }
 
     @Override
