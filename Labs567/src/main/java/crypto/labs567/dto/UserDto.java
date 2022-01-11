@@ -1,5 +1,6 @@
 package crypto.labs567.dto;
 
+import crypto.labs567.validation.NotCommonPassword;
 import crypto.labs567.validation.QuiteStrongPassword;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,5 +18,6 @@ public class UserDto {
     private String firstName;
     private String lastName;
     @QuiteStrongPassword
+    @NotCommonPassword
     private String password;
 }
