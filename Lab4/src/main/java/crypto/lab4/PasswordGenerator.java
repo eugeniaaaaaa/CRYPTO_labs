@@ -2,14 +2,12 @@ package crypto.lab4;
 
 import lombok.SneakyThrows;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class PasswordGenerator implements AutoCloseable {
     private static final int top100PasswordRate = 10;
