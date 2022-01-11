@@ -21,8 +21,6 @@ public class User {
     private String lastName;
     private String passwordEncoded;
     private String salt;
-    @Embedded
-    private UserRole role;
 
     @Override
     public int hashCode() {

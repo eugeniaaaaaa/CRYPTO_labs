@@ -8,11 +8,12 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests()
+        http.authorizeRequests()
                 .antMatchers("/", "/home").permitAll()
+                .anyRequest().authenticated()
                 .and()
-                .formLogin().loginPage("/login").permitAll()
+                .formLogin().loginPage("/login").defaultSuccessUrl("/workspace").permitAll()
                 .and()
-                .logout().permitAll();
+                .logout().logoutSuccessUrl("/").permitAll();
     }
 }
