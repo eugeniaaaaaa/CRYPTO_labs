@@ -9,4 +9,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 public class CryptoProperties {
     private String commonPasswordsFileName;
+    private String contentEncodingSecretKey;
 }

@@ -10,3 +10,4 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQL10Dialect
 crypto:
   common-passwords-file-name: Labs567/data/most-common-passwords.txt
+  content-encoding-secret-key: llT+gdR2E0zzQ6iriaqfNbOMZPWYf9fJMD0gUs5i6m8=

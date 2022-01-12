@@ -17,15 +17,13 @@ public class User {
     @Column(unique = true)
     private String email;
     @Column(unique = true) // Because why not?
-    @Convert(converter = AttributeEncryptor.class)
     private String username;
-    @Convert(converter = AttributeEncryptor.class)
     private String firstName;
-    @Convert(converter = AttributeEncryptor.class)
     private String lastName;
-    @Convert(converter = AttributeEncryptor.class)
-    private String phoneNumber;
+    private byte[] phoneNumber;
     private String passwordEncoded;
+
+    private byte[] salt;
 
     @Override
     public int hashCode() {
