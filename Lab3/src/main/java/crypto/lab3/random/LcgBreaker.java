@@ -5,14 +5,22 @@ import crypto.lab3.RemoteService;
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 
 public class LcgBreaker extends AbstractBreaker {
-    private long a = 0;
-    private long c = 1;
+    private static class AC {
+        long a, c;
+        public AC(long a, long c) {
+            this.a = a;
+            this.c = c;
+        }
+    }
+
     private final long m = BigInteger.valueOf(2).pow(32).longValue();
 
     public LcgBreaker(RemoteService remoteService) {
@@ -39,67 +47,74 @@ public class LcgBreaker extends AbstractBreaker {
         // a = (Z * m + x2 - x3) / (x1 - x2)
         // So, our task is to find such 'Z' that (Z * m + x2 - x3) % (x1 - x2) == 0
         // We need 3 values to make assumptions and one more to find which values are correct:
-        List<Long> Xs = IntStream.range(0, 4).mapToObj(i -> requestNextNumber()).collect(Collectors.toList());
-        Set<Long> possibleAs = computePossibleAs(Xs);
-        findAndSetCorrectConstants(possibleAs, Xs);
-//        this.a = 4296631821L;
-//        this.c = 1013904223L;
+        List<Integer> Xs = IntStream.range(0, 4)
+                .mapToObj(i -> (int) requestNextNumber())
+                .collect(Collectors.toList());
 
-        long lastNumber = Xs.get(Xs.size() - 1);
+        Set<Long> aCandidates = computePossibleAs(Xs);
+        AC ac = findCorrectConstants(aCandidates, Xs);
+
+        int lastNumber = Xs.get(Xs.size() - 1);
         do {
-            lastNumber = predictNextNumber(lastNumber);
-        } while (betAndGetAccountMoney(100, lastNumber) < 1_000_000);
+            lastNumber = calculateNext(lastNumber, ac.a, ac.c);
+        } while (betAndGetAccountMoney(lastNumber) < 1_000_000);
     }
 
-    private Set<Long> computePossibleAs(List<Long> Xs) {
-        if (Xs.size() < 3) {
-            throw new IllegalStateException("Not enough arguments to predict");
-        }
-
-        // Only use first 3 entries for computation
-        long X1 = Xs.get(0);
-        long X2 = Xs.get(1);
-        long X3 = Xs.get(2);
-
-        Set<Long> possibleAs = new HashSet<>();
-        for (long z = Integer.MIN_VALUE; z < Integer.MAX_VALUE; z++) {
-            if (0 == (z * m + X2 - X3) % (X1 - X2)) {
-                possibleAs.add((z * m + X2 - X3) / (X1 - X2));
-            }
-        }
-        return possibleAs;
-    }
-
-    private void findAndSetCorrectConstants(Set<Long> possibleAs, List<Long> Xs) {
-        long[] XsArray = Xs.stream().mapToLong(i -> i).toArray();
-        for (long possibleA : possibleAs) {
-            for (long possibleC = Integer.MIN_VALUE; possibleC <= Integer.MAX_VALUE; possibleC++) {
-                boolean fits = true;
-                for (int i = 1; i < Xs.size(); i++) {
-                    if (predictNextNumber(XsArray[i - 1], possibleA, possibleC) != XsArray[i]) {
-                        fits = false;
-                        break;
+    private Set<Long> computePossibleAs(List<Integer> results) {
+        return IntStream.range(1, results.size() - 1)
+                .parallel()
+                .mapToObj(i -> {
+                    int prevResult = results.get(i - 1);
+                    int result = results.get(i);
+                    int nextRes = results.get(i + 1);
+                    Set<Long> As = new HashSet<>();
+                    for (long z = Integer.MIN_VALUE; z < Integer.MAX_VALUE; z++) {
+                        long aCandidateMod = (z * m + result - nextRes) % (prevResult - result);
+                        if (aCandidateMod == 0) {
+                            As.add((z * m + result - nextRes) / (prevResult - result));
+                        }
                     }
-                }
-                if (fits) {
-                    this.a = possibleA;
-                    this.c = possibleC;
-                    return;
-                }
-            }
-        }
+                    return As;
+                }).reduce((set1, set2) -> {
+                    HashSet<Long> result = new HashSet<>(set1);
+                    result.retainAll(set2);
+                    return result;
+                })
+                .orElseThrow(IllegalStateException::new);
     }
 
-    private long predictNextNumber(long prevNumber) {
-        return predictNextNumber(prevNumber, a, c);
+    private AC findCorrectConstants(Set<Long> aCandidates, List<Integer> results) {
+        return LongStream.range(Integer.MIN_VALUE, Integer.MAX_VALUE)
+                .parallel()
+                .mapToObj(c -> {
+                    for (long a : aCandidates) {
+                        boolean allCorrect = true;
+                        for (int i = 1; i < results.size(); i++) {
+                            int prevResult = results.get(i - 1);
+                            int result = results.get(i);
+                            if (calculateNext(prevResult, a, c) % m != result) {
+                                allCorrect = false;
+                                break;
+                            }
+                        }
+                        if (allCorrect) {
+                            return new AC(a, c);
+                        }
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElseThrow(IllegalStateException::new);
     }
 
-    private long predictNextNumber(long prevNumber, long a, long c) {
-        return (a * prevNumber + c) % m;
+    private int calculateNext(int last, long a, long c) {
+        long ret = (a * last + c) % m;
+        return (int) ret;
     }
 
-    private long betAndGetAccountMoney(int amountOfMoney, long number) {
-        return getRemoteService().play(amountOfMoney, number).getAccount().getMoney();
+    private long betAndGetAccountMoney(long number) {
+        return getRemoteService().play(100, number).getAccount().getMoney();
     }
 
     private long requestNextNumber() {
