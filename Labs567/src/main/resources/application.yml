@@ -8,6 +8,16 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQL10Dialect
+server:
+  ssl:
+    enabled: true
+    key-store-type: JKS
+    key-store: classpath:./labs567.jks
+    key-store-password: testpass
+    key-store-provider: SUN
+    key-alias: labs567
+    protocol: TLS
+    enabled-protocols: TLSv1.2
 crypto:
   common-passwords-file-name: Labs567/data/most-common-passwords.txt
   content-encoding-secret-key: llT+gdR2E0zzQ6iriaqfNbOMZPWYf9fJMD0gUs5i6m8=
